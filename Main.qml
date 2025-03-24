@@ -6,65 +6,151 @@ Window {
     width: 640
     height: 480
     visible: true
-    title: qsTr("Hello World")
+    title: qsTr("From Data to Visualization: Building Animated QML Charts")
+
+    property int iDuration: 400
+    property int interval: 60
+
+    property var chartData :
+        [{duration: iDuration, height: 20, y: 170, x: 10, newY: 170, fHeight: 20, paceY: 10, sHeight: 20}
+        , {duration: iDuration + interval, height: 25, y: 163, x: 40, newY: 163, fHeight: 25, paceY: 20, sHeight: 25 }
+        , {duration: iDuration + interval * 2, height: 20, y: 160, x: 70, x: 70, newY: 160, fHeight: 20, paceY: 20, sHeight: 20}
+        , {duration: iDuration + interval * 3, height: 20, y: 150, x: 100, newY: 150, fHeight: 20, paceY: 23, sHeight: 30}
+        , {duration: iDuration + interval * 4, height: 25, y: 140, x: 130, newY: 140, fHeight: 25, paceY: 23, sHeight: 35}
+        , {duration: iDuration + interval * 5, height: 20, y: 150, x: 160, newY: 150, fHeight: 20, paceY: 10, sHeight: 20}
+        , {duration: iDuration + interval * 6, height: 20, y: 150, x: 190, newY: 150, fHeight: 20, paceY: 20, sHeight: 45}
+        , {duration: iDuration + interval * 7, height: 100, y: 50, x: 220, newY: 50, fHeight: 100, paceY: 90, sHeight: 75}
+        , {duration: iDuration + interval * 8, height: 30, y: 40, x: 250, newY: 40, fHeight: 35, paceY: 50, sHeight: 85}
+        , {duration: iDuration + interval * 9, height: 30, y: 45, x: 280, newY: 75, fHeight: 50, paceY: 10, sHeight: 20}
+        , {duration: iDuration + interval * 10, height: 80, y: 100, x: 310, newY: 140, fHeight: 20, paceY: 10, sHeight: 25}
+        , {duration: iDuration + interval * 11, height: 20, y: 170, x: 340, newY: 120, fHeight: 20, paceY: 10, sHeight: 20}]
+
+    property int rowSpacing: 10
+    property int lineWidth: 20
+    property int graphWidth: lineWidth * chartData.length + rowSpacing * (chartData.length + 1)
 
     ColumnLayout {
+        anchors.fill: parent
+        spacing: 10
 
-        anchors.centerIn: parent
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+        }
 
-        Rectangle {
-
-            color: "dodgerblue"
-            width: 300
+        Item {
             height: 200
 
-            RowLayout {
-
-                anchors.centerIn: parent
-                //anchors.fill: parent
+            Rectangle {
+                id: chart
+                width: graphWidth
+                height: 200
+                color: "dodgerblue"
+                x: 640
 
                 Repeater {
                     id: repeater
-                    model: [{duration: 600, height: 150}, {duration: 800, height: 50}
-                        , {duration: 1000, height: 100}, {duration: 1200, height: 40}
-                        , {duration: 1400, height: 20}, {duration: 1600, height: 120}
-                    , {duration: 1800, height: 40}, {duration: 2000, height: 30}]
+                    model: chartData
 
                     RoundedLine {
-
-                        required property int index
                         required property var modelData
+                        property alias line: line
+                        property alias parallelAnim: parallelAnim
+                        property alias paceAnim: paceAnim
 
                         id: line
-                        //objectName: modelData.id
                         recHeight: modelData.height
-                        Component.onCompleted: {
-                            console.log(modelData.duration)
-                            //anim.start()
+                        recY: modelData.y
+                        recX: modelData.x
+
+                        ParallelAnimation {
+                            id: parallelAnim
+
+                            PropertyAnimation {
+                                target: line
+                                property: "color"
+                                to: "red"
+                                duration: modelData.duration
+                            }
+
+                            PropertyAnimation {
+                                target: line
+                                property: "y"
+                                easing.type: Easing.OutBounce
+                                to: modelData.newY
+                                duration: modelData.duration
+                            }
+
+                            PropertyAnimation {
+                                target: line
+                                property: "height"
+                                easing.type: Easing.OutBounce
+                                to: modelData.fHeight
+                                duration: modelData.duration
+                            }
                         }
 
-                        property alias anim: anim
+                        ParallelAnimation {
+                            id: paceAnim
 
-                        PropertyAnimation {
-                            id: anim
-                            target: line
-                            property: "color"
-                            to: "red"
-                            duration: modelData.duration
+                            PropertyAnimation {
+                                target: line
+                                property: "color"
+                                to: "mediumturquoise"
+                                duration: modelData.duration
+                            }
+
+                            PropertyAnimation {
+                                target: line
+                                property: "y"
+                                easing.type: Easing.OutBounce
+                                to: modelData.paceY
+                                duration: modelData.duration
+                            }
+
+                            PropertyAnimation {
+                                target: line
+                                property: "height"
+                                easing.type: Easing.OutBounce
+                                to: modelData.sHeight
+                                duration: modelData.duration
+                            }
                         }
+                    }
+                }
+
+                PropertyAnimation {
+                    id: recAnim
+                    target: chart
+                    property: "x"
+                    easing.type: Easing.Linear
+                    to: 320 - graphWidth / 2
+                    duration: 500
+                }
+            }
+        }
+
+        Button {
+            text: "Heart Rate"
+            Layout.alignment: Qt.AlignHCenter
+            onClicked: {
+                for (let i = 0; i < repeater.count; i++) {
+                    let item = repeater.itemAt(i);
+                    if (item) {
+                        item.line.parallelAnim.start();
                     }
                 }
             }
         }
 
         Button {
-            text: "start"
+            text: "Pace"
             Layout.alignment: Qt.AlignHCenter
             onClicked: {
                 for (let i = 0; i < repeater.count; i++) {
-                    let item = repeater.itemAt(i); // Get each RoundedLine
+                    let item = repeater.itemAt(i);
                     if (item) {
-                        item.anim.start(); // ✅ Access and start animation
+                        item.line.paceAnim.start();
                     }
                 }
             }
@@ -73,16 +159,31 @@ Window {
         Button {
             text: "Reset Animations"
             Layout.alignment: Qt.AlignHCenter
-            anchors.margins: 50
             onClicked: {
                 for (let i = 0; i < repeater.count; i++) {
-                    let item = repeater.itemAt(i);
+                    let item = repeater.itemAt(i).line;
                     if (item) {
-                        item.anim.stop(); // ✅ Stop animation
-                        item.color = "darkgrey"; // ✅ Reset color
+                        item.parallelAnim.stop();
+                        item.paceAnim.stop()
+                        item.color = "darkgrey";
+                        item.height = chartData[i].height
+                        item.y = chartData[i].y
                     }
                 }
             }
+        }
+
+        Button {
+            text: "Show Chart"
+            Layout.alignment: Qt.AlignHCenter
+            onClicked: {
+                recAnim.start()
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
         }
     }
 }
